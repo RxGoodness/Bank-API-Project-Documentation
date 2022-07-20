@@ -1,0 +1,37 @@
+[
+  {
+    "accountNo": 3708871056,
+    "balance": 44000,
+    "createdAt": "2022-04-06T15:17:47.855Z"
+  },
+  {
+    "accountNo": 5910296934,
+    "balance": 76000,
+    "createdAt": "2022-04-06T15:17:57.931Z"
+  },
+  {
+    "accountNo": 8335514202,
+    "balance": 100000,
+    "createdAt": "2022-04-06T15:18:05.442Z"
+  },
+  {
+    "accountNo": 2246292213,
+    "balance": 2000,
+    "createdAt": "2022-04-06T15:18:11.460Z"
+  },
+  {
+    "accountNo": 3717596176,
+    "balance": 191000,
+    "createdAt": "2022-04-06T15:18:18.132Z"
+  },
+  {
+    "accountNo": 7337122585,
+    "balance": 76000,
+    "createdAt": "2022-04-06T21:36:30.425Z"
+  },
+  {
+    "accountNo": 2087451263,
+    "balance": 10100,
+    "createdAt": "2022-04-07T14:08:53.694Z"
+  }
+]
