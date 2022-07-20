@@ -1,19 +1,17 @@
-import {getUserAccount, getAllAccounts, createAccount, transfer} from '../controllers/controller';
-import express from 'express';
-import { balance, transaction, validate } from '../validation';
-const router = express.Router();
+var express = require('express');
+var router = express.Router();
+import { allBalances, createAccount, individualBalance, transfer } from '../../users';
+import { balance, validate, transaction } from "../../inputValidator"
 
-//import { postValidator } from '../Validation/inputValidation';
-// var database = require('../database.json');
 
 /* GET users listing. */
-console.log('USER.TS, WE ARE HEREEEEEEEEEEEE')
 
-router.get('/balance/:accountNo', getUserAccount);
-router.get('/balance', getAllAccounts);
-router.post('/create-account', validate(balance), createAccount);
-router.post('/transfer', validate(transaction), transfer);
-// router.put('/:id', updateUserData);
-// router.delete('/:id', deleteUser);
+router.get('/balances', allBalances);
+
+router.route('/create-account').post(validate(balance), createAccount);
+
+router.get('/balances/:accountNumber', individualBalance)
+
+router.route('/transfer').post(validate(transaction), transfer);
 
 export default router;
