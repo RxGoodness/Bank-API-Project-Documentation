@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
-import { allBalances, createAccount, individualBalance, transfer } from '../../users';
+// import { allBalances, createAccount, individualBalance, transfer } from '../../users';
+import { allBalances, createAccount, individualBalance, transfer } from '../controllers/controller';
+
 import { balance, validate, transaction } from "../../inputValidator"
 
 

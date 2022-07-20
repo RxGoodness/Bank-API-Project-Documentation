@@ -1,131 +1,134 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import fs from 'fs';
-import { Request, Response } from 'express';
-import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { balancesInterface } from '../routes/interface';
+import { NextFunction, Request, Response } from 'express';
+import fs from 'fs';
+import * as path from 'path'
+// import { getRandom } from '../utilities/accountgenerator';
+import { getRandom } from '../../utilities/accountgenerator';
 
 uuidv4();
 
-const balanceDataPath = path.join(__dirname, '../../balanceDatabase.json');
-const balanceDatabaseExist = fs.existsSync(balanceDataPath);
-if (balanceDatabaseExist === false) {
-  fs.writeFile(balanceDataPath, '[]', 'utf8', (err) => console.log(err));
-}
-const balanceDatabase = JSON.parse(fs.readFileSync(balanceDataPath, 'utf-8'));
-
-const transactionDataPath = path.join(
-  __dirname,
-  '../../transactionDatabase.json',
-);
-const transactionDataExist = fs.existsSync(transactionDataPath);
-if (transactionDataExist === false) {
-  fs.writeFile(transactionDataPath, '[]', 'utf8', (err) => console.log(err));
+interface data1 {
+  reference: string;
+  senderAccount: number;
+  amount: number;
+  receiverAccount: number;
+  transferDescription: string;
+  createdAt: string
 }
 
-export const createAccount = (req: Request, res: Response) => {
-  const accountNumber = Math.floor(Math.random() * 10000000000);
-  const body = req.body;
-  const userWithAcc = {
-    accountNo: accountNumber,
-    balance: body.balance,
-    createdAt: new Date().toISOString(),
-  };
-  fs.readFile('./balanceDatabase.json', 'utf8', function (err, data) {
-    const readData = JSON.parse(data);
-    readData.push(userWithAcc);
-    fs.writeFile(
-      './balanceDatabase.json',
-      JSON.stringify(readData, null, 2),
-      'utf8',
-      (err) => console.log(err),
-    );
+let pathData = path.join(__dirname, '../../../databases/account_database.json')
+let pathData2 = path.join(__dirname, '../../../databases/transaction_database.json')
+
+let isExists = fs.existsSync(pathData);
+let isExists2 = fs.existsSync(pathData2);
+
+if(isExists === false) {
+  fs.writeFileSync(pathData, '[]');
+}
+
+if(isExists2 === false) {
+  fs.writeFileSync(pathData2, '[]')
+}
+
+let database = JSON.parse(fs.readFileSync(pathData, "utf-8"));
+
+export const allBalances = (req: Request, res: Response) => {
+  fs.readFile(pathData, 'utf8', (err, content) => {
+  res.send(content)
   });
-  res.send(userWithAcc);
-};
+}
 
-export const getUserAccount = (req: Request, res: Response) => {
-  const accountNum = req.params.accountNo;
-  const data = balanceDatabase.find(
-    (balance: balancesInterface) => balance.accountNo == Number(accountNum),
-  );
-  if (data) {
-    res.status(200).send(data);
-  } else {
-    res.status(404).send('This account does not exist on balanceDatabase');
-  }
-};
+export const createAccount = async (req: Request, res: Response) => {
 
-export const getAllAccounts = (req: Request, res: Response) => {
-  if (balanceDatabaseExist == true) {
-    fs.readFile('./balanceDatabase.json', 'utf8', (err, content) => {
-      res.send(content);
-    });
+  let body = req.body;
+  let uniqueAcc = await getRandom(10);
+
+  let uniqueUser = { account: uniqueAcc, balance: body.balance, createdAt: new Date().toISOString() }
+
+  fs.readFile(pathData, 'utf8', function(err, data){
+    let readData = JSON.parse(data);
+    readData.push(uniqueUser);
+    fs.writeFile(pathData, JSON.stringify(readData, null, 2), "utf8", err => console.log(err));
+  });
+
+ res.status(200).send({status: 0, uniqueUser});
+
+}
+
+export const individualBalance = (req: Request, res: Response) => {
+
+  const id  = req.params.accountNumber;
+
+  let result = database.find( (acc: { account: number | string; }) => acc.account == id);
+
+  if(result) {
+    return res.status(200).send({status: 0, result});
   } else {
-    res.send('Database is empty');
+  return res.status(404).send({status: 1, message: 'This account does not exist in the database'});
   }
-};
+
+}
 
 export const transfer = (req: Request, res: Response) => {
-  const body = req.body;
-  const senderAcc = body.senderAccount;
-  const receiverAcc = body.receiverAccount;
-  const amountRecieved = body.amount;
-  const description = body.transferDescription;
+  let body = req.body;
 
-  const find1 = balanceDatabase.findIndex(
-    (item: { accountNo: number }) => item.accountNo === senderAcc,
-  );
-  const find2 = balanceDatabase.findIndex(
-    (item: { accountNo: number }) => item.accountNo === receiverAcc,
-  );
+  let senderAcc = body.from;
+  let receiverAcc = body.to;
+  let amountRecieved = body.amount;
+  let description = body.transferDescription;
 
-  if (amountRecieved < balanceDatabase[find1].balance) {
-    console.log(balanceDatabase[find1].balance);
-    const transaction1 = {
-      ...balanceDatabase[find1],
-      balance: balanceDatabase[find1].balance - amountRecieved,
-      createdAt: balanceDatabase[find1].createdAt,
-    };
+  let find1 = database.findIndex((item: { account: number | string; }) => item.account === senderAcc);
+  let find2 = database.findIndex((item: { account: number | string; }) => item.account === receiverAcc);
 
-    balanceDatabase[find1] = transaction1;
+ if(amountRecieved < database[find1].balance) {
 
-    const transaction2 = {
-      ...balanceDatabase[find2],
-      balance: balanceDatabase[find2].balance + amountRecieved,
-      createdAt: balanceDatabase[find2].createdAt,
-    };
-    balanceDatabase[find2] = transaction2;
-
-    fs.writeFile(
-      './balanceDatabase.json',
-      JSON.stringify(balanceDatabase, null, 2),
-      (err) => {
-        console.log(err);
-      },
-    );
-  } else {
-    return res.status(404).send({ message: 'Insufficient fund' });
+  let transaction1 = {
+    ...database[find1],
+    balance: database[find1].balance - amountRecieved,
+    createdAt: database[find1].createdAt
   }
-  const transactionData = {
+
+  database[find1] = transaction1;
+
+  let transaction2 = {
+    ...database[find2],
+    balance: database[find2].balance + amountRecieved,
+    createdAt: database[find2].createdAt
+  }
+
+  database[find2] = transaction2;
+
+  fs.writeFile(pathData, JSON.stringify(database, null, 2), (err) => {
+    console.log(err);
+  })
+  } else {
+    return res.status(400).send({ message: "Insufficient funds" })
+  }
+
+
+  let transactionData: data1 = {
     reference: uuidv4(),
     senderAccount: senderAcc,
     amount: amountRecieved,
     receiverAccount: receiverAcc,
     transferDescription: description,
     createdAt: new Date().toISOString(),
-  };
+  }
 
-  fs.readFile(transactionDataPath, 'utf8', function (err, data) {
-    const readData = JSON.parse(data);
+  fs.readFile(pathData2, 'utf8', function(err, data){
+    let readData = JSON.parse(data);
     readData.push(transactionData);
-    fs.writeFile(
-      transactionDataPath,
-      JSON.stringify(readData, null, 2),
-      'utf8',
-      (err) => console.log(err),
-    );
+    fs.writeFile(pathData2, JSON.stringify(readData, null, 2), "utf8", err => console.log(err));
   });
 
   res.send(JSON.stringify(transactionData, null, 2));
-};
+}
+
+
+
+module.exports = {
+  allBalances,
+  createAccount,
+  individualBalance,
+  transfer
+}
